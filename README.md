@@ -151,7 +151,9 @@ ZBvoteSDk是基于ZBSmartLiveSDK的0.1.18版本的一个适用于iOS平台快速
 | voteID     | 当前直播间主播usid |   nsstring     |
 | data     |   请求成功后返回的数据   |   NSDictionary   |
 | error        |    请求失败  |  nil  |
+
 请求后返回的结果
+
 | 参数名称  |  描述 |  类型  |
 | -----   | -----  | ----  |
 | data     | 请求成功返回的数据 |      NSDictionary  |
@@ -211,7 +213,9 @@ data里面数据样式
 | voteID     | 当前直播间投票id |   nsstring     |
 | data     |   请求成功后返回的数据   |   NSMutableArray或者nsstring   |
 | error        |    请求失败  |  nil  |
+
 请求后返回的结果
+
 | 参数名称  |  描述 |  类型  |
 | -----   | -----  | ----  |
 | data     | 请求成功返回的数据 |      NSMutableArray或者nsstring  |
@@ -236,6 +240,7 @@ data里面数据样式
 |option_key	|string	|投票选项key	|
 |option_value	|string	|投票选项name	|
 |option_ballot|	int|	投票数	|
+
 ###以下是您所需添加主播端发起投票功能的VC里面实例代码
 在m文件中包含以下头文件
 ```python
@@ -655,11 +660,14 @@ if(commentTimer && commentTimer.isValid) {
 | vote_id     | 当前次投票的id |   nsstring     |
 | chooseOption        |   观众投票时候选择的投给某个选项   |   nsstring   |
 | count        |    礼物数量（金币数量）    |  nsinteger  |
+
 请求后返回的结果
+
 | 参数名称  |  描述 |  类型  |
 | -----   | -----  | ----  |
 | data     | 请求成功返回的数据 |   id（NSMutableArray）     |
 | error        |   请求失败   |   nil   |
+
 data里面的数据
 ```python
 "options":[
