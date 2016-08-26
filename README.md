@@ -655,6 +655,7 @@ if(commentTimer && commentTimer.isValid) {
                             error:(void(^)(NSError *error))error;
 ```
 建议按一下代码处理点击送礼物按钮事件里面的代码(此处用了全局变量 bool类型的isGift来传递判断当前点击事件是单纯送礼物还是投票，isGift为yes的时候就需要请求上面的接口)需要传递的参数有
+
 | 参数名称  |  描述 |  类型  |
 | -----   | -----  | ----  |
 | vote_id     | 当前次投票的id |   nsstring     |
