@@ -1,27 +1,24 @@
-# ZBvoteSDk
-###ZBvoteSDk 概述
+# 智播投票
+###智播投票概述
 
-ZBvoteSDk是基于ZBSmartLiveSDK的0.1.18版本的一个适用于iOS平台快速集成直播发起投票和投票功能的SDK,配合智播云后台数据可及时获取+投票信息。ZBvoteSDk提供了定制化的UI，UI相对的坐标调整。(备注:该SDK只支持在真机环境下调试发布,仅支持ARC环境和object-c工程)
+智播直播间投票基于IM及时通讯，让主播端和观众端同步显示投票信息。依赖智播投票接口，对发起投票和投票数据进行处理，实现不同数据和界面的交互。
 
-###开发环境配置
-首先需要导入依赖库ZBSmartLiveSDK的0.1.18版本，您的工程里面的frameworks 需要导入UIKit库。然后将ZBvoteSDK里面的所有文件手动下载到本地，再手动将所有文件导入到您的工程里面即可。
-
-###功能描述（在直播间）
+###投票功能描述（在直播间）
 
 1.主播界面：发起投票及时显示投票信息
 2.观众界面：获取、显示投票信息；根据投票的信息（选项）投票给某选项
 
-###ZBvoteSDK内部文件提供的类（代理协议）和方法：
+###智播投票功能类（代理协议）和方法：
 1.VoteView.h 投票信息里面每个投票选项视图
 
     1）代理方法
 ```python
-    - (void)GetWith:(CGFloat)with;//代理获取当前所有投票选项信息视图里面最大的宽度，用于在投票结束后创建收起按钮的时候设置按钮的横坐标
+    - (void)getGoldLabelWith:(CGFloat)with;//代理获取当前所有投票选项信息视图里面最大的宽度，用于在投票结束后创建收起按钮的时候设置按钮的横坐标
 ```
 
     2）代理方法
 ```python
-- (void)showVoteView;//用于观众界面点击VoteView里面的视图层次最 上层的titleButton的时候触发此代理方法，然后触发AnchorVotingView.h里面的- (void)showVoteChooseView代理方法弹出观众投票视图
+- (void)showVoteListView;//当投票正在进行的时候，点击投票视图里面某个选项弹出观众投票选择视图
 ```
 
 2.AnchorApplyView.h 主播界面发起（编辑）投票视图
@@ -36,8 +33,23 @@ ZBvoteSDk是基于ZBSmartLiveSDK的0.1.18版本的一个适用于iOS平台快速
  *  @param time   编辑的时候选择的时间单位是min
  *  @param voteid 此次编辑的投票id
  */
-- (void)createvoteView :(NSMutableArray *)arr :(BOOL)flag :(NSString *)time :(NSString *)voteid;
+- (void)createVoteOngoingWithArray:(NSMutableArray *)optionArray flag:(BOOL)flag voteTime:(NSString *)time voteId:(NSString *)voteId;
 ```
+    2）代理方法
+```python
+/**
+ *  发送消息（主播编辑好投票内容后点击发起投票按钮，成功之后需要发消息）
+ *
+ *  @param message    消息内容
+ *  @param chatId   直播间的聊天室的id
+ */
+- (void)sendMessageWithMessage:(ZBMessage *)message chaId:(NSNumber *)chatId;
+```
+		message的属性赋值：
+			message.fromUserIdentity = _usid;//消息发送者id
+            message.extend = data;//消息主要内容（主播请求发起投票的接口的所有数据）
+            message.extendCode = 1201;//专属有新投票消息的的消息码
+            message.messageType = ZBMessageTypeCoustomAvailable;//消息类型
 
 3.AnchorVotingView.h当前投票正在进行视图
 
@@ -49,7 +61,7 @@ ZBvoteSDk是基于ZBSmartLiveSDK的0.1.18版本的一个适用于iOS平台快速
  *  @param voteViewArr 当前投票倒计时结束的时候存在的VoteView数组（保存的是当前投票里面显示的所有VoteView）
  *  @param h           当前voteViewArr里面的所有VoteView的最大的宽度
  */
-- (void)createVoteResult:(NSMutableArray *)voteViewArr :(CGFloat)h;
+- (void)createVoteResult:(NSMutableArray *)voteViewArr MaximumWidth:(CGFloat)MaxWith;
 ```
     2）代理方法:观众界面弹起投票视图
 ```python
@@ -58,7 +70,7 @@ ZBvoteSDk是基于ZBSmartLiveSDK的0.1.18版本的一个适用于iOS平台快速
  *
  *  @param chooseArr 当前投票时候存在的VoteView数组（保存的是当前投票里面显示的所有VoteView）
  */
-- (void)showVoteChooseView:(NSMutableArray *)chooseArr;
+- (void)showVoteListChooseView:(NSMutableArray *)chooseArr;
 ```
     3）方法:通过传入参数投票信息数据里面的options（投票选项信息）数组、投票时长、以及您想设置的AnchorVotingView的Y坐标来创建AnchorVotingView视图。
 ```python
@@ -70,7 +82,7 @@ ZBvoteSDk是基于ZBSmartLiveSDK的0.1.18版本的一个适用于iOS平台快速
  *  @param timestr 倒计时的时间
  *  @param y       在VC上面的纵坐标
  */
-- (void)createVotingView:(NSMutableArray *)arr :(BOOL)isflag :(NSString *)timestr :(CGFloat)y;
+- (void)createVotingViewWithArray:(NSMutableArray *)optionArray isflag:(BOOL)isflag voteTime:(NSString *)timestr originY:(CGFloat)y;
 ```
     4）方法:根据投票信息数据接口请求到的数据里面的options（投票选项信息）数组来对当前AnchorVotingView视图里面的每个VoteView的各个属性赋值，以此来达到改变进度条的目的。
 ```python
@@ -90,7 +102,7 @@ ZBvoteSDk是基于ZBSmartLiveSDK的0.1.18版本的一个适用于iOS平台快速
  *
  *  @param frames 当前投票结束视图的frame
  */
-- (void)shouqiView:(CGRect)frames;
+- (void)packUpView:(CGRect)frames;
 ```
     2）方法:目的是处理当观众首次进入直播间的时候，投票已经结束但又没有新的投票正在进行，这样的情况下来创建投票结果视图AnchorvoteResultView，此方法目的是放回一个数组，数组里面元素是VoteView，VoteView的个数以及每个VoteView的属性信息依据要显示的那次投票数据信息里面的options（投票选项信息）数组来决定。
 ```python
@@ -112,7 +124,7 @@ ZBvoteSDk是基于ZBSmartLiveSDK的0.1.18版本的一个适用于iOS平台快速
  *  @param y      在VC上面的纵坐标
  *  @param height 当前投票voteView里面最大视图宽度
  */
-- (void)createVoteResultView :(NSMutableArray *)arr :(CGFloat)y :(CGFloat)height;
+- (void)createVoteResultView:(NSMutableArray *)arr resultViewOriginY:(CGFloat)y MaximumWidth:(CGFloat)MaxWith;
 ```
 5.VoteChooseView.h观众界面弹起的投票列表视图
 
@@ -241,78 +253,109 @@ data里面数据样式
 |option_value	|string	|投票选项name	|
 |option_ballot|	int|	投票数	|
 
-###以下是您所需添加主播端发起投票功能的VC里面实例代码
-在m文件中包含以下头文件
 ```python
-#import "VoteView.h"
-#import "AnchorApplyView.h"
-#import "AnchorVotingView.h"
-#import "AnchorvoteResultView.h"
-#import "VoteGetNewData.h"
-#import "VoteResultButton.h"
+/**
+ *  观众投票送礼物的接口
+ *
+ *  @param vote_id      当前次投票的id
+ *  @param chooseOption 选择投票给某个选项
+ *  @param count        金币数量
+ *  @param completion   请求成功返回data数据里面包含所有选项的数据
+ *  @param error        请求失败返回nil
+ */
+- (void)getVoteGiftDataWithVoteID:(NSString *)vote_id
+                       option_key:(NSString *)chooseOption
+                            count:(NSInteger)count
+                       completion:(void(^)(id data))completion
+                            error:(void(^)(NSError *error))error;
 ```
-然后遵循其代理
 ```python
-AnchorApplyViewDelegate
-AnchorVotingViewDelegate
-AnchorvoteResultViewDelegate
+/**
+ *  永久结束投票接口
+ *
+ *  @param vote_id    投票id
+ *  @param completion 完成返回的当前结束投票的数据
+ *  @param error      请求失败返回nil
+ */
+- (void)getCloseVoteDataWithVoteID:(NSString *)vote_id
+                        completion:(void(^)(id data))completion
+                             error:(void(^)(NSError *error))error;
 ```
-需要在m文件里面设置以下变量
 ```python
-NSTimer *commentTimer;//最新投票信息数据刷新定时器
-NSString *vote_id;//投票id
+/**
+ *  临时结束投票接口
+ *
+ *  @param vote_id    投票id
+ *  @param completion 完成返回的当前关闭投票的数据
+ *  @param error      请求失败返回nil
+ */
+- (void)getTemporaryCloseVoteDataWithVoteID:(NSString *)vote_id
+                                 completion:(void(^)(id data))completion
+                                      error:(void(^)(NSError *error))error;
 ```
-然后设置属性
 ```python
-@property (nonatomic, strong) UIButton *sponsorVoteButton;//弹出投票视图按钮
-@property (nonatomic, strong) VoteResultButton *voteResult;//投票结果按钮
-@property (nonatomic, strong) AnchorApplyView *applyView;
-@property (nonatomic, strong) AnchorvoteResultView *resultView;
-@property (nonatomic, strong) AnchorVotingView *votingView;
+/**
+ *  恢复临时结束投票接口
+ *
+ *  @param vote_id    投票id
+ *  @param completion 完成返回的当前关闭投票的数据
+ *  @param error      请求失败返回nil
+ */
+- (void)getStartTemporaryCloseVoteDataWithVoteID:(NSString *)vote_id
+                                 completion:(void(^)(id data))completion
+                                      error:(void(^)(NSError *error))error;
 ```
-其次要在viewDidLoad里面添加以下代码（创建VC上的一个按钮来作为主播发起投票的触发事件）
+主播端实例代码以及处理逻辑详解
 ```python
-[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(changeVoteButtonState:) name:@"VOTEBUTTONCANCLICK" object:nil];
-    _sponsorVoteButton = [[UIButton alloc] initWithFrame:CGRectMake(ScreenWidth - 40 - 40, ScreenHeight - 40, 40, 40)];
-    [_sponsorVoteButton.layer setMasksToBounds:YES];
-    _sponsorVoteButton.layer.cornerRadius = 20.0;
-    [_sponsorVoteButton setBackgroundImage:[UIImage imageNamed:@"host_btn_vote_normal"] forState:UIControlStateNormal];
-    [_sponsorVoteButton addTarget:self action:@selector(createVote) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:_sponsorVoteButton];
-    [self getNewVotetestData];
-```
-再在viewWillDisappear里面添加以下代码
-```python
-if(commentTimer && commentTimer.isValid) {
-        [commentTimer invalidate];
-        commentTimer = nil;
-    }
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"STOPTIMER" object:nil];
-```
-将以下代码拷贝进m文件里面
-```python
+主播端：主播开启直播的时候根据主播自己id，请求自己最新（上一次）发起的投票信息，如果请求成功并强行执行永久结束此次投票接口，用以保证主播开启直播的时候，之前的投票都是结束的。此时控制主播页面的发起投票按钮是否可点击。
+分不同情况处理：	1）请求成功并且强制结束上一次投票成功，发起投票按钮可以点击。
+					2）请求失败，但是返回的code是91404（此主播从未发起投票），此时发起投票按钮也是可以点击
 - (void)getNewVotetestData{
     VoteGetNewData *newData = [[VoteGetNewData alloc] init];
     [newData getNewVoteDataWithVoteID:User_Info_Global.userInfo.basicInfo.usid completion:^(id data) {
         if (data && [data isKindOfClass:[NSDictionary class]]) {
-            if ([[data objectForKey:@"timeStr"] isEqualToString:@""]) {
-                [self createvoteView:[data objectForKey:@"dataArr"] :[data objectForKey:@"flag"] :nil :[data objectForKey:@"vote_id"]];
-            }else{
-                [self createvoteView:[data objectForKey:@"dataArr"] :[data objectForKey:@"flag"] :[data objectForKey:@"timeStr"] :[data objectForKey:@"vote_id"]];
-            }
+            //强制结束投票
+            [newData getCloseVoteDataWithVoteID:[data objectForKey:@"vote_id"] completion:^(id data) {
+                //
+            } error:^(NSError *error) {
+                //
+            }];
+            _sponsorVoteButton.selected = YES;
+            _sponsorVoteButton.enabled = YES;
         }
     } error:^(NSError *error) {
         NSLog(@"超时");
+        vote_id = nil;
+        if (error.code == 91404) {
+            //从未发起过投票
+            _sponsorVoteButton.enabled = YES;
+            [_sponsorVoteButton setSelected:YES];
+        }else{
+            _sponsorVoteButton.enabled = NO;
+            [_sponsorVoteButton setSelected:NO];
+        }
     }];
 }
+
+创建投票编辑视图：首先需要判断是否加入聊天室成功，因为发起投票需要走IM及时通讯，如果加入聊天室失败则无法发起投票并且弹框提示。
 - (void)createVote{
-    _applyView = [[AnchorApplyView alloc] init];
-    _applyView.delegate = self;
-    _applyView.userInteractionEnabled = YES;
-    [self.view addSubview:_applyView];
+    if (canApplyVote) {
+        _applyView = [[AnchorApplyView alloc] init];
+        _applyView.usid = User_Info_Global.userInfo.basicInfo.usid;
+        _applyView.chatId = [NSNumber numberWithInteger:_cidByIM];
+        _applyView.delegate = self;
+        _applyView.userInteractionEnabled = YES;
+        [self.view addSubview:_applyView];
+    }else{
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"加入聊天室失败" message:@"无法发起投票!" delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil];
+        alertView.delegate = self;
+        [alertView show];
+    }
 }
-- (void)createvoteView:(NSMutableArray *)arr :(BOOL)isflag :(NSString *)time :(NSString *)voteID{
-    CGFloat y = 64.0;//视图y坐标
+
+主播端发起投票成功之后，创建正在投票的信息视图，此时需要将投票编辑视图、投票结果显示视图投票结果按钮移除掉（如果这些视图存在）
+- (void)createVoteOngoingWithArray:(NSMutableArray *)optionArray flag:(BOOL)flag voteTime:(NSString *)time voteId:(NSString *)voteId{
+    CGFloat y = 130.0;//视图y坐标
     if (_applyView) {
         [_applyView removeFromSuperview];
         _applyView = nil;
@@ -327,14 +370,10 @@ if(commentTimer && commentTimer.isValid) {
     }
     _votingView = [[AnchorVotingView alloc] init];
     _votingView.delegate = self;
-    [_votingView createVotingView:arr :isflag :time :y];
+    _votingView.vote_id = voteId;
+    [_votingView createVotingViewWithArray:optionArray isflag:flag voteTime:time originY:y];
     [self.view addSubview:_votingView];
-    vote_id = voteID;
-    if (!commentTimer) {
-        commentTimer = [NSTimer timerWithTimeInterval:5 target:self selector:@selector(getNewData) userInfo:nil repeats:YES];
-        [[NSRunLoop  currentRunLoop] addTimer:commentTimer forMode:NSDefaultRunLoopMode];
-        [commentTimer fire];
-    }
+    vote_id = voteId;
 }
 - (void)createVoteResult:(NSMutableArray *)voteViewArr :(CGFloat)h{
     if (_votingView) {
@@ -350,117 +389,26 @@ if(commentTimer && commentTimer.isValid) {
         commentTimer = nil;
     }
 }
-- (void)shouqiView:(CGRect)frames{
-    [UIView animateWithDuration:0.4 animations:^{
-        CGRect frame = frames;
-        _resultView.resultViewframe = frames;
-        CGFloat h = frame.size.height;
-        _resultView.frame = CGRectMake(8.0, 64.0, 0.f, h);
-    } completion:^(BOOL finished) {
-        [_resultView removeFromSuperview];
-        _voteResult = [[VoteResultButton alloc] initWithFrame:CGRectMake(0.f, 64.0, 20, 55)];
-        [_voteResult addTarget:self action:@selector(showVoteResultView) forControlEvents:UIControlEventTouchUpInside];
-        [self.view addSubview:_voteResult];
-    }];
-}
-- (void)showVoteResultView{
-    CGRect frame = _resultView.frame;
-    CGFloat h = frame.size.height;
-    [_voteResult removeFromSuperview];
-    _voteResult = nil;
-    [UIView animateWithDuration:0.4 animations:^{
-        _resultView.frame = CGRectMake(8.0, 64.0, _resultView.resultViewframe.size.width, h);
-        [self.view addSubview:_resultView];
-    }];
-}
-- (void)changeVoteButtonState:(NSNotification *)notice{
-    if ([[notice.userInfo objectForKey:@"flag"] isEqualToString:@"can"]) {
-        _sponsorVoteButton.enabled = YES;
-        [_sponsorVoteButton setBackgroundImage:[UIImage imageNamed:@"host_btn_vote_normal"] forState:UIControlStateNormal];
-    }else if ([[notice.userInfo objectForKey:@"flag"] isEqualToString:@"no"]){
-        _sponsorVoteButton.enabled = NO;
-        [_sponsorVoteButton setBackgroundImage:[UIImage imageNamed:@"host_btn_vote_unable"] forState:UIControlStateNormal];
-    }else{
-        
+
+投票结束后，创建投票结果视图，只要投票结束，发起投票按钮就可以点击。
+- (void)createVoteResult:(NSMutableArray *)voteViewArr MaximumWidth:(CGFloat)MaxWith{
+    if (_votingView) {
+        [_votingView removeFromSuperview];
+        _votingView = nil;
     }
-}
-- (void)getNewData{
-    NSDictionary *dict = @{@"vote_id":vote_id};
-    VoteGetNewData *newDatas;
-    if (newDatas) {
-    }else{
-        newDatas = [[VoteGetNewData alloc] init];
-    }
-    [newDatas getVotingDataWithVoteID:vote_id completion:^(id data) {
-        if (data) {
-            if ([data isKindOfClass:[NSMutableArray class]]) {
-                if (_votingView) {
-                    [_votingView setValue:data];
-                }
-            }else{
-                if(commentTimer && commentTimer.isValid) {
-                    [commentTimer invalidate];
-                    commentTimer = nil;
-                }
-            }
-        }
-    } error:^(NSError *error) {
-    }];
+    _resultView = [[AnchorvoteResultView alloc] init];
+    _resultView.delegate = self;
+    [_resultView createVoteResultView:voteViewArr resultViewOriginY:130 MaximumWidth:MaxWith];
+    [self.view addSubview:_resultView];
+    _sponsorVoteButton.enabled = YES;
+    [_sponsorVoteButton setSelected:YES];
 }
 ```
-###在观众角色进入直播间的VC里面需要的操作（建议）
-m文件里面需要包含以下头文件
-```python
-#import "VoteView.h"
-#import "AnchorVotingView.h"
-#import "AnchorvoteResultView.h"
-#import "VoteResultButton.h"
-#import "VoteGetNewData.h"
-#import "VoteChooseView.h"
-```
-遵循的代理（协议）里面应该包含以下delegate
-```python
-VoteViewDelegate
-AnchorVotingViewDelegate
-AnchorvoteResultViewDelegate
-VoteChooseViewDelegate
-```
-在m文件内部变量里面添加以下变量（建议，名字可修改，但是修改后需要代码里面涉及到的也要修改）
-```python
-NSTimer *commentTimer;//投票信息刷新定时器
-NSTimer *lastVoteTimer;//最新的投票定时器
-NSString *vote_id;//投票id
-BOOL isGift;//yes投票no单纯送礼物
-NSString *chooseOption;//观众选择投票的选项
-```
-在m文件内部属性里面添加以下属性
-```python
-@property (nonatomic, strong) AnchorvoteResultView *resultView;
-@property (nonatomic, strong) AnchorVotingView *votingView;
-@property (nonatomic, strong) VoteResultButton *voteResult;
-@property (nonatomic, strong) VoteGetNewData *voteNewData;
-@property (nonatomic, strong) VoteChooseView *voteChooseView;
-```
-在viewDidLoad里面添加以下代码
-```python
-isGift = NO;
-[self getNewVotetestData];
-```
-在viewWillDisappear里面添加以下代码
-```python
-if(commentTimer && commentTimer.isValid) {
-        [commentTimer invalidate];
-        commentTimer = nil;
-    }
-    if(lastVoteTimer && lastVoteTimer.isValid) {
-        [lastVoteTimer invalidate];
-        lastVoteTimer = nil;
-    }
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"STOPTIMER" object:nil];
-```
-然后在m文件代码块里面添加以下代码即可
+
+观众端关于投票实例代码和相关处理逻辑
 ```python
 //voteChooseView代理
+在弹出的投票选项视图里面点击某个选项然后弹出送礼物界面（因为这里需要将原生的送礼物界面的送出按钮改成投票按钮，这里用isGift布尔值来判断）
 - (void)chooseGift:(NSString *)option{
     if ([option isEqualToString:@"投A"]) {
         NSLog(@"送礼物给A选项");
@@ -478,9 +426,8 @@ if(commentTimer && commentTimer.isValid) {
     isGift = YES;
     [self showGiftView];
 }
-//进入直播间需要请求数据
+//进入直播间需要请求数据：请求当前直播间主播最新的一次投票信息，如果是正在投票则需要执行创建正在投票信息视图，如果不是正在投票则不作处理（不作任何ui界面操作）。
 - (void)getNewVotetestData{
-    NSDictionary *dict = @{@"usid":self.liveListDataModel.basicInfo.usid};
     if (_voteNewData) {
         //
     }else{
@@ -491,42 +438,20 @@ if(commentTimer && commentTimer.isValid) {
         if (data && [data isKindOfClass:[NSDictionary class]]) {
             //
             if ([[data objectForKey:@"timeStr"] isEqualToString:@""]) {
-                if (_resultView) {
-                    //
-                }else{
-                    _resultView = [[AnchorvoteResultView alloc] init];
-                    _resultView.delegate = self;
-                    [_resultView createVoteResultView:[_resultView getdataArr:[data objectForKey:@"dataArr"]] :YY(self.starHeadView) + 10 :_resultView.with];
-                    [self.view addSubview:_resultView];
-                }
-                if (!lastVoteTimer) {
-                    lastVoteTimer = [NSTimer timerWithTimeInterval:5 target:self selector:@selector(getNewVotetestData) userInfo:nil repeats:YES];
-                    [[NSRunLoop  currentRunLoop] addTimer:lastVoteTimer forMode:NSDefaultRunLoopMode];
-                    [lastVoteTimer fire];
-                }
             }else{
-                //结束最新投票定时器
-                if(lastVoteTimer && lastVoteTimer.isValid) {
-                    [lastVoteTimer invalidate];
-                    lastVoteTimer = nil;
-                }
-                [self createvoteView:[data objectForKey:@"dataArr"] :[data objectForKey:@"flag"] :[data objectForKey:@"timeStr"] :[data objectForKey:@"vote_id"]];
+                [self createVoteOngoingWithArray:[data objectForKey:@"dataArr"] flag:[data objectForKey:@"flag"] voteTime:[data objectForKey:@"timeStr"] voteId:[data objectForKey:@"vote_id"]];
+                //                [self createvoteView:[data objectForKey:@"dataArr"] :[data objectForKey:@"flag"] :[data objectForKey:@"timeStr"] :[data objectForKey:@"vote_id"]];
             }
         }
     } error:^(NSError *error) {
-        //
         //未发起过投票
-        if (!lastVoteTimer) {
-            lastVoteTimer = [NSTimer timerWithTimeInterval:5 target:self selector:@selector(getNewVotetestData) userInfo:nil repeats:YES];
-            [[NSRunLoop  currentRunLoop] addTimer:lastVoteTimer forMode:NSDefaultRunLoopMode];
-            [lastVoteTimer fire];
-        }
     }];
 }
 
 //创建正在投票视图AnchorVotingView方法
-- (void)createvoteView:(NSMutableArray *)arr :(BOOL)isflag :(NSString *)time :(NSString *)voteID{
-    CGFloat y = YY(self.starHeadView) + 10;//视图y坐标
+处理逻辑：同主播端一样，如果结果视图和投票结果按钮存在那么就需要移除
+- (void)createVoteOngoingWithArray:(NSMutableArray *)optionArray flag:(BOOL)flag voteTime:(NSString *)time voteId:(NSString *)voteId{
+    CGFloat y = 120;//视图y坐标
     if (_resultView) {
         [_resultView removeFromSuperview];
         _resultView= nil;
@@ -536,18 +461,15 @@ if(commentTimer && commentTimer.isValid) {
         _voteResult = nil;
     }
     _votingView = [[AnchorVotingView alloc] init];
+    NSLog(@"=======================%@",_votingView);
     _votingView.delegate = self;
-    [_votingView createVotingView:arr :isflag :time :y];
+    _votingView.vote_id = voteId;
+    [_votingView createVotingViewWithArray:optionArray isflag:flag voteTime:time originY:y];
     [self.view addSubview:_votingView];
-    vote_id = voteID;
-    if (!commentTimer) {
-        commentTimer = [NSTimer timerWithTimeInterval:5 target:self selector:@selector(getNewData) userInfo:nil repeats:YES];
-        [[NSRunLoop  currentRunLoop] addTimer:commentTimer forMode:NSDefaultRunLoopMode];
-        [commentTimer fire];
-    }
+    vote_id = voteId;
 }
 //AnchorVotingView代理
-- (void)createVoteResult:(NSMutableArray *)voteViewArr :(CGFloat)h{
+- (void)createVoteResult:(NSMutableArray *)voteViewArr MaximumWidth:(CGFloat)MaxWith{
     if (_votingView) {
         [_votingView removeFromSuperview];
         _votingView = nil;
@@ -555,76 +477,11 @@ if(commentTimer && commentTimer.isValid) {
     _resultView = [[AnchorvoteResultView alloc] init];
     _resultView.delegate = self;
     //AnchorvoteResultView方法
-    [_resultView createVoteResultView:voteViewArr :YY(self.starHeadView) + 10 :h];
+    [_resultView createVoteResultView:voteViewArr resultViewOriginY:120 MaximumWidth:MaxWith];
     [self.view addSubview:_resultView];
-    
-    if(commentTimer && commentTimer.isValid) {
-        [commentTimer invalidate];
-        commentTimer = nil;
-        //开启最新投票轮询
-        if (!lastVoteTimer) {
-            lastVoteTimer = [NSTimer timerWithTimeInterval:5 target:self selector:@selector(getNewVotetestData) userInfo:nil repeats:YES];
-            [[NSRunLoop  currentRunLoop] addTimer:lastVoteTimer forMode:NSDefaultRunLoopMode];
-            [lastVoteTimer fire];
-        }
-    }
-}
-//刷新数据轮询
-- (void)getNewData{
-    NSDictionary *dict = @{@"vote_id":vote_id};
-    if (_voteNewData) {
-        //
-    }else{
-        _voteNewData = [[VoteGetNewData alloc] init];
-    }
-    [_voteNewData getVotingDataWithVoteID:vote_id completion:^(id data) {
-        //
-        if (data) {
-            if ([data isKindOfClass:[NSMutableArray class]]) {
-                if (_votingView) {
-                    [_votingView setValue:data];
-                }
-            }else{
-                if(commentTimer && commentTimer.isValid) {
-                    [commentTimer invalidate];
-                    commentTimer = nil;
-                }
-            }
-        }
-    } error:^(NSError *error) {
-        //
-        NSLog(@"目测请求失败");
-    }];
-}
-- (void)shouqiView:(CGRect)frames{
-    CGRect frame = frames;
-    _resultView.resultViewframe = frames;
-    CGFloat h = frame.size.height;
-    CGFloat height = frame.origin.y;
-    [UIView animateWithDuration:0.4 animations:^{
-        //
-        _resultView.frame = CGRectMake(8.0, height, 0.f, h);
-    } completion:^(BOOL finished) {
-        //
-        [_resultView removeFromSuperview];
-        _voteResult = [[VoteResultButton alloc] initWithFrame:CGRectMake(0.f, height, 20, 55)];
-        [_voteResult addTarget:self action:@selector(showVoteResultView) forControlEvents:UIControlEventTouchUpInside];
-        [self.view addSubview:_voteResult];
-    }];
-}
-- (void)showVoteResultView{
-    CGRect frame = _resultView.frame;
-    CGFloat h = frame.size.height;
-    CGFloat height = frame.origin.y;
-    [_voteResult removeFromSuperview];
-    _voteResult = nil;
-    [UIView animateWithDuration:0.4 animations:^{
-        _resultView.frame = CGRectMake(8.0, height, _resultView.resultViewframe.size.width, h);
-        [self.view addSubview:_resultView];
-    }];
 }
 //AnchorVotingView代理
-- (void)showVoteChooseView:(NSMutableArray *)chooseArr{
+- (void)showVoteListChooseView:(NSMutableArray *)chooseArr{
     if (_voteChooseView) {
         [_voteChooseView removeFromSuperview];
         _voteChooseView = nil;
@@ -635,71 +492,73 @@ if(commentTimer && commentTimer.isValid) {
     [self.view addSubview:_voteChooseView];
 }
 ```
-
-由于观众角色进入的直播间界面的投票信息以及相关UI需要和礼物视图以及送礼物点击事件融合。以下是您的代码块里面需要注意和处理的内容：
-1.在我提供的代码块里面的一个voteChooseView代理方法- (void)chooseGift:(NSString *)option，在这个方法里面代码最末里面弹出您的送礼物界面，并且在您的送礼物视图里面做相应处理
+#关于收发消息消息处理
+观众端：观众端收到消息里面如果message.extendCode是1201是代表是主播端发过来的发起投票的消息，如果message.extendCode是1202就是收到其他观众给主播投票的消息。对应的处理代码实例如下。
+//收到发起投票消息
 ```python
-//此时你必须把giveGiftView里面的givGiftButton要设成外部属性
-    if (isGift) {
-        [self.giveGiftView.givGiftButton setTitle:@"投票" forState:UIControlStateNormal];
-    }else{
-        [self.giveGiftView.givGiftButton setTitle:@"送出" forState:UIControlStateNormal];
+ if (message.extendCode == 1201) {
+        NSString *timeStr;
+        NSDate *dat = [NSDate date];
+        NSDate *voteDate = [NSDate dateWithTimeIntervalSince1970:[[message.extend objectForKey:@"create_time"] integerValue]];
+        NSTimeInterval a = [dat timeIntervalSinceDate:voteDate];  //  *1000 是精确到毫秒，不乘就是精确到秒
+        int t = [[message.extend objectForKey:@"time"] intValue] * 60 - (int)a;
+        timeStr = [NSString stringWithFormat:@"%d",t];
+        [self createVoteOngoingWithArray:[message.extend objectForKey:@"options"] flag:YES voteTime:timeStr voteId:[message.extend objectForKey:@"vote_id"]];
+        //
+        //        [self createVoteOngoingWithArray:[data objectForKey:@"dataArr"] flag:[data objectForKey:@"flag"] voteTime:[data objectForKey:@"timeStr"] voteId:[data objectForKey:@"vote_id"]];
+    }
+    //收投票消息
+    if (message.extendCode == 1202) {
+        NSMutableArray *voteDataArr = [[NSMutableArray alloc] init];
+        [voteDataArr removeAllObjects];
+        [voteDataArr addObjectsFromArray:[message.extend objectForKey:@"options"]];
+        if (_votingView) {
+            [_votingView setValue:voteDataArr];
+        }
+        [self getLocationChatInfoModelNickNameAndVerifiedWithUsid:message.fromUserIdentity successCallBack:^(id data) {
+            //
+            ChatInfoModel *locationChatInfo = data;
+            ChatInfoModel *chatInfoModel = [[ChatInfoModel alloc] init];
+            chatInfoModel.isVerified = locationChatInfo.isVerified;
+            chatInfoModel.nickName = locationChatInfo.nickName;
+            chatInfoModel.avatarDic = locationChatInfo.avatarDic;
+            [self.giveGiftShowView showGiftWithGoldCode:[[message.extend objectForKey:@"voteDetail"] objectForKey:@"gift_code"] userName:chatInfoModel.nickName isVerified:chatInfoModel.isVerified uidByIM:[message.fromUserIdentity integerValue] avatarDic:chatInfoModel.avatarDic voteOption:[NSString stringWithFormat:@"投%@",[[message.extend objectForKey:@"voteDetail"] objectForKey:@"vote_key"]]];
+        } failCallBack:^(NSString *err) {
+            //
+            DebugLog(@"%@", [err debugDescription]);
+        }];
+        return;
     }
 ```
-2.在您的送礼物按钮的点击事件里面需要请求下面的接口
+主播端：收到投票消息后处理代码示例
 ```python
-- (void)getVoteGiftDataWithVoteID:(NSString *)vote_id
-                       option_key:(NSString *)chooseOption
-                            count:(NSInteger)count
-                       completion:(void(^)(id data))completion
-                            error:(void(^)(NSError *error))error;
-```
-建议按一下代码处理点击送礼物按钮事件里面的代码(此处用了全局变量 bool类型的isGift来传递判断当前点击事件是单纯送礼物还是投票，isGift为yes的时候就需要请求上面的接口)需要传递的参数有
-
-| 参数名称  |  描述 |  类型  |
-| -----   | -----  | ----  |
-| vote_id     | 当前次投票的id |   nsstring     |
-| chooseOption        |   观众投票时候选择的投给某个选项   |   nsstring   |
-| count        |    礼物数量（金币数量）    |  nsinteger  |
-
-请求后返回的结果
-
-| 参数名称  |  描述 |  类型  |
-| -----   | -----  | ----  |
-| data     | 请求成功返回的数据 |   id（NSMutableArray）     |
-| error        |   请求失败   |   nil   |
-
-data里面的数据
-```python
-"options":[
-            {
-                "option_key":"op_1",
-                "option_value":"选项1",
-                "option_ballot":15
-            },
-            {
-                "option_key":"op_2",
-                "option_value":"选项2",
-                "option_ballot":74
-            }
-```
-```python
-if (isGift) {
-        //请求投票接口
-        if (!_voteNewData) {
-            _voteNewData = [[VoteGetNewData alloc] init];
+//收投票消息
+    if (message.extendCode == 1202) {
+        NSMutableArray *voteDataArr = [[NSMutableArray alloc] init];
+        [voteDataArr removeAllObjects];
+        [voteDataArr addObjectsFromArray:[message.extend objectForKey:@"options"]];
+        if (_votingView) {
+            [_votingView setValue:voteDataArr];
         }
-        [_voteNewData getVoteGiftDataWithVoteID:vote_id option_key:chooseOption count:giftCount completion:^(id data) {
+        [self getLocationChatInfoModelNickNameAndVerifiedWithUsid:message.fromUserIdentity successCallBack:^(id data) {
             //
-            if (data && [data isKindOfClass:[NSMutableArray class]]) {
-                //
-                if (_votingView) {
-                    [_votingView setValue:data];
+            ChatInfoModel *locationChatInfo = data;
+            ChatInfoModel *chatInfoModel = [[ChatInfoModel alloc] init];
+            chatInfoModel.isVerified = locationChatInfo.isVerified;
+            chatInfoModel.nickName = locationChatInfo.nickName;
+            chatInfoModel.avatarDic = locationChatInfo.avatarDic;
+            [self.giveGiftShowView showGiftWithGoldCode:[[message.extend objectForKey:@"voteDetail"] objectForKey:@"gift_code"] userName:chatInfoModel.nickName isVerified:chatInfoModel.isVerified uidByIM:[message.fromUserIdentity integerValue] avatarDic:chatInfoModel.avatarDic voteOption:[NSString stringWithFormat:@"投%@",[[message.extend objectForKey:@"voteDetail"] objectForKey:@"vote_key"]]];
+            for (ZBOldGiftModel *model in Initialize_Info.giftList) {
+                if ([model.giftCode isEqualToString:message.extend[@"type"]]) {
+                    self.goldCount += (int)model.gold;
+                    return;
                 }
             }
-        } error:^(NSError *error) {
+        } failCallBack:^(NSString *err) {
             //
-            NSLog(@"网络请求失败");
+            DebugLog(@"%@", [err debugDescription]);
         }];
+        return;
     }
 ```
+
